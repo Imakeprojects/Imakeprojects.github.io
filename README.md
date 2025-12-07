@@ -74,23 +74,178 @@
     <!-- Notification -->
     <div id="notification-box" class="text-white"></div>
 
-    <!-- Website -->
-    <div id="website-container" class="min-h-screen flex flex-col">
-        <nav class="bg-stone-900 text-stone-100 p-4 sticky top-0 z-50 shadow-xl border-b-4 border-amber-600">
-            <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
-                <div class="font-serif text-xl md:text-2xl font-extrabold text-amber-500">⛏️ Train2Excavate Academy</div>
-                <div class="flex gap-3 md:gap-6 items-center flex-wrap">
-                    <div class="flex gap-2 md:gap-6">
-                        <button id="nav-home" onclick="switchSection('home')" class="nav-button active">HUB</button>
-                        <button id="nav-guides" onclick="switchSection('guides')" class="nav-button">GUIDES</button>
-                        <button id="nav-quiz" onclick="switchSection('quiz')" class="nav-button">ACADEMY</button>
-                        <button id="nav-artifacts" onclick="switchSection('artifacts')" class="nav-button">ARTIFACTS</button>
-                    </div>
-                    <button onclick="startSimulation()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 md:px-4 py-2 rounded-xl font-bold shadow-lg border border-amber-400">ENTER SIM</button>
-                </div>
+   <!-- Navbar -->
+<nav class="bg-stone-900 text-stone-100 p-4 sticky top-0 z-50 shadow-xl border-b-4 border-amber-600">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
+        <div class="font-serif text-xl md:text-2xl font-extrabold text-amber-500">⛏️ Train2Excavate Academy</div>
+        <div class="flex gap-3 md:gap-6 items-center flex-wrap">
+            <div class="flex gap-2 md:gap-6">
+                <button onclick="switchSection('home')" class="nav-button">HUB</button>
+                <button onclick="switchSection('guides')" class="nav-button">GUIDES</button>
+                <button onclick="switchSection('quiz')" class="nav-button">ACADEMY</button>
+                <button onclick="switchSection('artifacts')" class="nav-button">ARTIFACTS</button>
+                <button onclick="switchSection('drreed')" class="nav-button">Dr. Evelyn Reed</button>
             </div>
-        </nav>
+            <button onclick="startSimulation()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 md:px-4 py-2 rounded-xl font-bold shadow-lg border border-amber-400">ENTER SIM</button>
+        </div>
+    </div>
+</nav>
 
+<!-- Main content area -->
+<div id="content-area" class="flex-1"></div>
+
+
+<script>
+// Global storage for Dr. Reed chat messages
+const drReedMessages = [];
+
+// Helper for TTS
+function speak(text){
+    if('speechSynthesis' in window){
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'en-US';
+        window.speechSynthesis.speak(utter);
+    }
+}
+
+// Offline AI response
+function getOfflineResponse(msg){
+    const responses = [
+        "Hello, how can I assist you today?",
+        "That's interesting! Tell me more.",
+        "I understand. Can you clarify further?",
+        "Let's explore that topic together.",
+        "I see. How does that make you feel?"
+    ];
+    return responses[Math.floor(Math.random()*responses.length)];
+}
+
+// Add message to chat
+function addMessageToChat(sender, text){
+    const chat = document.getElementById('drReedChat');
+    if(!chat) return;
+    const msgDiv = document.createElement('div');
+    msgDiv.className = sender==="You" ? "self-end bg-amber-100 p-2 rounded shadow" : "self-start bg-stone-200 p-2 rounded shadow";
+    msgDiv.textContent = `${sender}: ${text}`;
+    chat.appendChild(msgDiv);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+// Send message
+function sendMessage(){
+    const input = document.getElementById('drReedInput');
+    if(!input.value) return;
+
+    const userMsg = input.value;
+    drReedMessages.push({sender:"You", text:userMsg});
+    input.value = "";
+
+    addMessageToChat("You", userMsg);
+
+    const response = getOfflineResponse(userMsg);
+    drReedMessages.push({sender:"Dr. Evelyn Reed", text:response});
+    addMessageToChat("Dr. Evelyn Reed", response);
+    speak(response);
+}
+
+// Audio call (simulated)
+function startAudioCall(){
+    addMessageToChat("System", "Starting audio call with Dr. Evelyn Reed...");
+    speak("Hello, this is Dr. Evelyn Reed. Let's talk.");
+}
+
+// Video call (offline)
+async function startVideoCall(){
+    const modal = document.getElementById('videoCallModal');
+    modal.classList.remove('hidden');
+
+    const userVideo = document.getElementById('userVideo');
+    const reedVideo = document.getElementById('reedVideo');
+
+    try{
+        const stream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
+        userVideo.srcObject = stream;
+    }catch(err){
+        alert("Unable to access webcam.");
+    }
+
+    // Simple Dr. Reed avatar via canvas
+    const canvasStream = document.createElement('canvas');
+    canvasStream.width = 320;
+    canvasStream.height = 240;
+    const ctx = canvasStream.getContext('2d');
+
+    function drawReed(){
+        ctx.fillStyle="#f3e5ab";
+        ctx.fillRect(0,0,320,240);
+        ctx.fillStyle="#000";
+        ctx.beginPath();
+        ctx.arc(100,100,10,0,Math.PI*2);
+        ctx.arc(220,100,10,0,Math.PI*2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(160,160,50,0,Math.PI);
+        ctx.stroke();
+        requestAnimationFrame(drawReed);
+    }
+    drawReed();
+    reedVideo.srcObject = canvasStream.captureStream();
+
+    speak("Hello, this is Dr. Evelyn Reed on video. How can I help?");
+}
+
+function endVideoCall(){
+    const modal = document.getElementById('videoCallModal');
+    modal.classList.add('hidden');
+    const userVideo = document.getElementById('userVideo');
+    if(userVideo.srcObject){
+        userVideo.srcObject.getTracks().forEach(track => track.stop());
+        userVideo.srcObject = null;
+    }
+}
+
+// Switch sections
+function switchSection(name){
+    const contentArea = document.getElementById('content-area');
+
+    if(name==='home'){
+        contentArea.innerHTML = `
+            <div class="max-w-4xl mx-auto p-4 md:p-8">
+                <h1 class="text-2xl md:text-3xl font-bold">Welcome to Train2Excavate Academy</h1>
+                <p class="mt-2 text-sm md:text-base text-stone-700">Explore guides, quizzes, and artifacts to enhance your excavation skills.</p>
+            </div>
+        `;
+    } else if(name==='guides'){
+        contentArea.innerHTML = `
+            <div class="max-w-5xl mx-auto p-4 md:p-8">
+                <h1 class="text-2xl md:text-3xl font-bold">Field Guides</h1>
+                <p class="mt-2 text-sm md:text-base text-stone-700">Explore detailed guides for excavation methods, tools, and procedures.</p>
+            </div>
+        `;
+    } else if(name==='quiz'){
+        contentArea.innerHTML = `
+            <div class="max-w-4xl mx-auto p-4 md:p-8">
+                <h1 class="text-2xl md:text-3xl font-bold">Excavation Academy Quizzes</h1>
+                <p class="mt-2 text-sm md:text-base text-stone-700">Pass a module to earn XP. Passing thresholds are shown per module.</p>
+                <div class="mt-6 space-y-4 md:space-y-6" id="quiz-list"></div>
+            </div>
+        `;
+        const list = document.getElementById('quiz-list');
+        list.innerHTML = quizModules.map(m=>{
+            const completed = gameState.quizzesCompleted.includes(m.id);
+            return `
+                <div class="bg-white p-3 md:p-4 rounded-xl shadow ${completed?'border-l-8 border-green-500':'border-l-8 border-red-500'}">
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <div class="flex-1">
+                            <div class="${completed?'text-green-700 text-lg md:text-xl font-bold':'text-red-700 text-lg md:text-xl font-bold'}">${m.title}</div>
+                            <div class="text-xs md:text-sm text-stone-500">Questions: ${m.questions.length} • Pass: ${Math.round(m.passPercent*100)}% • XP: ${m.xp}</div>
+                        </div>
+                        <button onclick="startQuiz('${m.id}')" ${completed ? 'disabled' : ''} class="px-3 md:px-4 py-2 rounded text-sm md:text-base ${completed?'bg-gray-400 cursor-not-allowed':'bg-amber-600 hover:bg-amber-700 text-white'}">${completed?'✓ Mastered':'Start'}</button>
+                    </div>
+                </div>`;
+        }).join('');
+    } else if(name==='artifacts'){
+        renderArtifactsTab();
         <main id="content-area" class="flex-grow"></main>
 
         <footer class="bg-stone-900 text-stone-500 py-6 text-center">Train2Excavate &copy; 2025</footer>
@@ -333,11 +488,153 @@ function switchSection(name){
         `;
         renderChecklist();
         updateStatsUI();
+} else if(name==='guides') {
+    contentArea.innerHTML = `
+    <div class="max-w-5xl mx-auto p-4 md:p-8">
+        <h1 class="text-2xl md:text-3xl font-bold">Field Guides</h1>
+        <p class="mt-4 text-stone-700">Explore archaeology, famous dig sites, tools, and tips for working on excavations.</p>
+
+        <div class="mt-6">
+
+            <h2 class="text-xl font-semibold mt-4">Introduction to Archaeology</h2>
+            <p class="mt-2 text-stone-700">
+                Archaeology is the study of human history through excavation and analysis of artifacts, structures, and landscapes. 
+                Archaeologists carefully uncover traces of past civilizations to learn about how people lived.
+            </p>
+
+            <h2 class="text-xl font-semibold mt-4">Famous Dig Sites</h2>
+            <div class="mt-2 space-y-4">
+                <button class="collapsible px-3 py-2 bg-blue-600 text-white rounded">Pompeii, Italy</button>
+                <div class="content px-3 py-2 bg-stone-100 rounded hidden flex flex-col items-center">
+                    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD..." alt="Pompeii" class="w-full md:w-1/2 rounded mb-2"/>
+                    <p>Preserved Roman city buried by a volcanic eruption in 79 AD. Offers insights into daily life in ancient Rome.</p>
+                </div>
+
+                <button class="collapsible px-3 py-2 bg-blue-600 text-white rounded">Giza, Egypt</button>
+                <div class="content px-3 py-2 bg-stone-100 rounded hidden flex flex-col items-center">
+                    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD..." alt="Giza" class="w-full md:w-1/2 rounded mb-2"/>
+                    <p>Home of the Great Pyramids and ancient tombs. Learn about pharaohs and Egyptian culture.</p>
+                </div>
+
+                <button class="collapsible px-3 py-2 bg-blue-600 text-white rounded">Stonehenge, England</button>
+                <div class="content px-3 py-2 bg-stone-100 rounded hidden flex flex-col items-center">
+                    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAZABkAAD..." alt="Stonehenge" class="w-full md:w-1/2 rounded mb-2"/>
+                    <p>Prehistoric monument with mysterious origins. Famous for large standing stones arranged in a circle.</p>
+                </div>
+
+                <button class="collapsible px-3 py-2 bg-blue-600 text-white rounded">Terracotta Army, China</button>
+                <div class="content px-3 py-2 bg-stone-100 rounded hidden flex flex-col items-center">
+                    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAXABkAAD..." alt="Terracotta Army" class="w-full md:w-1/2 rounded mb-2"/>
+                    <p>Thousands of life-size statues guarding an emperor's tomb. Discovered in 1974, showing ancient Chinese craftsmanship.</p>
+                </div>
+            </div>
+
+            <h2 class="text-xl font-semibold mt-4">Tools & Techniques</h2>
+            <ul class="list-disc list-inside text-stone-700 mt-2 space-y-1">
+                <li><span class="tooltip" title="Used for precise digging and scraping layers of soil.">Trowel</span></li>
+                <li><span class="tooltip" title="Used to gently clean fragile artifacts.">Brushes</span></li>
+                <li><span class="tooltip" title="Used to sift soil and find small objects like coins or bones.">Screens</span></li>
+                <li><span class="tooltip" title="Notebooks, cameras, and scanners to document every discovery.">Recording Tools</span></li>
+            </ul>
+
+            <h2 class="text-xl font-semibold mt-4">Working at a Dig Site</h2>
+            <ul class="list-disc list-inside text-stone-700 mt-2 space-y-1">
+                <li>Mapping and measuring excavation areas.</li>
+                <li>Excavating carefully without damaging artifacts.</li>
+                <li>Cataloging and preserving finds.</li>
+                <li>Analyzing discoveries to understand historical context.</li>
+            </ul>
+
+            <h2 class="text-xl font-semibold mt-4">Quick Tips for Beginners</h2>
+            <ul class="list-disc list-inside text-stone-700 mt-2 space-y-1">
+                <li>Wear gloves and protective gear.</li>
+                <li>Take detailed notes and photos.</li>
+                <li>Respect the site and follow safety rules.</li>
+                <li>Ask questions and learn from experienced archaeologists.</li>
+            </ul>
+
+            <div class="quiz mt-6 p-4 bg-stone-100 rounded">
+                <h2 class="text-lg font-semibold">Mini Quiz 1</h2>
+                <p class="mt-2">Which tool is used to gently clean artifacts?</p>
+                <button onclick="alert('Correct! Brushes are used to clean artifacts.');" class="mt-2 px-3 py-1 bg-blue-600 text-white rounded">Brushes</button>
+                <button onclick="alert('Incorrect. Try again!');" class="mt-2 ml-2 px-3 py-1 bg-gray-400 text-white rounded">Trowel</button>
+                <button onclick="alert('Incorrect. Try again!');" class="mt-2 ml-2 px-3 py-1 bg-gray-400 text-white rounded">Screen</button>
+            </div>
+
+            <div class="quiz mt-6 p-4 bg-stone-100 rounded">
+                <h2 class="text-lg font-semibold">Mini Quiz 2</h2>
+                <p class="mt-2">Which famous site was buried by a volcanic eruption?</p>
+                <button onclick="alert('Correct! Pompeii was buried by Vesuvius.');" class="mt-2 px-3 py-1 bg-blue-600 text-white rounded">Pompeii</button>
+                <button onclick="alert('Incorrect. Try again!');" class="mt-2 ml-2 px-3 py-1 bg-gray-400 text-white rounded">Giza</button>
+                <button onclick="alert('Incorrect. Try again!');" class="mt-2 ml-2 px-3 py-1 bg-gray-400 text-white rounded">Stonehenge</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Collapsible dig site sections
+        const collapsibles = contentArea.querySelectorAll('.collapsible');
+        collapsibles.forEach(button => {
+            button.addEventListener('click', () => {
+                const content = button.nextElementSibling;
+                content.classList.toggle('hidden');
+            });
+        });
+
+        // Tooltip animation
+        const tooltipElems = contentArea.querySelectorAll('.tooltip');
+        tooltipElems.forEach(el => {
+            el.style.position = 'relative';
+            el.addEventListener('mouseenter', () => {
+                const tip = document.createElement('span');
+                tip.className = 'tooltip-text';
+                tip.innerText = el.getAttribute('title');
+                tip.style.position = 'absolute';
+                tip.style.bottom = '125%';
+                tip.style.left = '50%';
+                tip.style.transform = 'translateX(-50%)';
+                tip.style.backgroundColor = '#333';
+                tip.style.color = '#fff';
+                tip.style.padding = '5px 8px';
+                tip.style.borderRadius = '4px';
+                tip.style.whiteSpace = 'nowrap';
+                tip.style.zIndex = '10';
+                tip.style.opacity = '0';
+                tip.style.transition = 'opacity 0.3s';
+                el.appendChild(tip);
+                requestAnimationFrame(() => { tip.style.opacity = '1'; });
+                el._tooltip = tip;
+            });
+            el.addEventListener('mouseleave', () => {
+                if(el._tooltip) el._tooltip.remove();
+            });
+        });
+    </script>
+    `;
+}
+
+            </div>
+        `;
+  // Global storage for Dr. Reed chat messages
+const drReedMessages = [];
+
+// Modified switchSection with memory for Dr. Reed
+function switchSection(name) {
+    const contentArea = document.getElementById('content-area'); // main container
+
+    if(name==='home') {
+        contentArea.innerHTML = `
+            <div class="max-w-4xl mx-auto p-4 md:p-8">
+                <h1 class="text-2xl md:text-3xl font-bold">Welcome to Train2Excavate Academy</h1>
+                <p class="mt-2 text-sm md:text-base text-stone-700">Explore guides, quizzes, and artifacts to enhance your excavation skills.</p>
+            </div>
+        `;
     } else if(name==='guides') {
         contentArea.innerHTML = `
             <div class="max-w-5xl mx-auto p-4 md:p-8">
                 <h1 class="text-2xl md:text-3xl font-bold">Field Guides</h1>
-                <p class="mt-4 text-stone-700">Detailed step-by-step guides coming soon.</p>
+                <p class="mt-2 text-sm md:text-base text-stone-700">Explore detailed guides for excavation methods, tools, and procedures.</p>
             </div>
         `;
     } else if(name==='quiz') {
@@ -362,8 +659,75 @@ function switchSection(name){
                     </div>
                 </div>`;
         }).join('');
-    } else if(name==='artifacts') {
-        renderArtifactsTab();
+         
+    } else if(name==='drreed') {
+          // content for Dr. Evelyn Reed
+          }
+            <div class="max-w-4xl mx-auto p-4 md:p-8 flex flex-col h-full">
+                <h1 class="text-2xl md:text-3xl font-bold">Chat with Dr. Evelyn Reed</h1>
+                <div class="flex-1 mt-4 overflow-y-auto flex flex-col gap-2" id="drReedChat" style="border:1px solid #ccc; padding:10px; border-radius:10px; background:#f9f9f9;"></div>
+                <div class="mt-4 flex gap-2">
+                    <input type="text" id="drReedInput" placeholder="Type your message..." class="flex-1 p-2 border rounded" />
+                    <button onclick="sendMessage()" class="bg-amber-600 text-white px-4 py-2 rounded">Send</button>
+                    <button onclick="startAudioCall()" class="bg-green-600 text-white px-4 py-2 rounded">Audio Call</button>
+                    <button onclick="startVideoCall()" class="bg-blue-600 text-white px-4 py-2 rounded">Video Call</button>
+                </div>
+                <!-- Video Call Modal -->
+                <div id="videoCallModal" class="fixed inset-0 bg-black bg-opacity-80 hidden flex flex-col justify-center items-center z-50">
+                    <div class="relative bg-stone-100 p-4 rounded shadow-lg flex flex-col gap-2 w-full max-w-3xl">
+                        <h3 class="text-xl font-bold mb-2">Video Call with Dr. Evelyn Reed</h3>
+                        <div class="flex gap-2">
+                            <video id="userVideo" autoplay muted class="w-1/2 border rounded shadow"></video>
+                            <video id="reedVideo" autoplay class="w-1/2 border rounded shadow"></video>
+                        </div>
+                        <button onclick="endVideoCall()" class="bg-red-600 text-white px-4 py-2 rounded mt-2 self-end">End Call</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Re-render previous messages
+        const chat = document.getElementById('drReedChat');
+        drReedMessages.forEach(m=>{
+            const msgDiv = document.createElement('div');
+            msgDiv.className = m.sender==="You" ? "self-end bg-amber-100 p-2 rounded shadow" : "self-start bg-stone-200 p-2 rounded shadow";
+            msgDiv.textContent = `${m.sender}: ${m.text}`;
+            chat.appendChild(msgDiv);
+        });
+        chat.scrollTop = chat.scrollHeight;
+    }
+}
+
+// Updated sendMessage to store messages
+function sendMessage() {
+    const input = document.getElementById('drReedInput');
+    if (!input.value) return;
+
+    const userMsg = input.value;
+    drReedMessages.push({sender:"You", text:userMsg});
+    input.value = "";
+
+    // Display user message
+    addMessageToChat("You", userMsg);
+
+    // Offline AI response
+    const response = getOfflineResponse(userMsg);
+    drReedMessages.push({sender:"Dr. Evelyn Reed", text:response});
+    addMessageToChat("Dr. Evelyn Reed", response);
+    speak(response);
+}
+
+// Helper to add a message to the chat container
+function addMessageToChat(sender, text) {
+    const chat = document.getElementById('drReedChat');
+    if(!chat) return;
+    const msgDiv = document.createElement('div');
+    msgDiv.className = sender==="You" ? "self-end bg-amber-100 p-2 rounded shadow" : "self-start bg-stone-200 p-2 rounded shadow";
+    msgDiv.textContent = `${sender}: ${text}`;
+    chat.appendChild(msgDiv);
+    chat.scrollTop = chat.scrollHeight;
+}
+
     }
 }
 
@@ -1010,6 +1374,7 @@ I've identified and fixed the issues with mobile controls and tool switching. He
                         <button id="nav-guides" onclick="switchSection('guides')" class="nav-button">GUIDES</button>
                         <button id="nav-quiz" onclick="switchSection('quiz')" class="nav-button">ACADEMY</button>
                         <button id="nav-artifacts" onclick="switchSection('artifacts')" class="nav-button">ARTIFACTS</button>
+                        <button id="nav-drreed" onclick="switchSection('drreed')" class="nav-button">Dr. Evelyn Reed</button>
                     </div>
                     <button onclick="startSimulation()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 md:px-4 py-2 rounded-xl font-bold shadow-lg border border-amber-400 text-sm md:text-base">ENTER SIM</button>
                 </div>
@@ -1246,13 +1611,130 @@ function switchSection(name){
         renderChecklist();
         updateStatsUI();
     } else if(name==='guides') {
-        contentArea.innerHTML = `
-            <div class="max-w-5xl mx-auto p-6 md:p-8">
-                <h1 class="text-2xl md:text-3xl font-bold">Field Guides</h1>
-                <p class="mt-4 text-sm md:text-base text-stone-700">Detailed step-by-step guides coming soon.</p>
+    contentArea.innerHTML = `
+    <div class="max-w-5xl mx-auto p-4 md:p-8">
+        <h1 class="text-2xl md:text-3xl font-bold">Field Guides</h1>
+        <p class="mt-4 text-stone-700">Explore archaeology, famous dig sites, tools, and tips for working on excavations.</p>
+
+        <div class="mt-6">
+
+            <h2 class="text-xl font-semibold mt-4">Introduction to Archaeology</h2>
+            <p class="mt-2 text-stone-700">
+                Archaeology is the study of human history through excavation and analysis of artifacts, structures, and landscapes. 
+                Archaeologists carefully uncover traces of past civilizations to learn about how people lived.
+            </p>
+
+            <h2 class="text-xl font-semibold mt-4">Famous Dig Sites</h2>
+            <div class="mt-2 space-y-4">
+                <button class="collapsible px-3 py-2 bg-blue-600 text-white rounded">Pompeii, Italy</button>
+                <div class="content px-3 py-2 bg-stone-100 rounded hidden flex flex-col items-center">
+                    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD..." alt="Pompeii" class="w-full md:w-1/2 rounded mb-2"/>
+                    <p>Preserved Roman city buried by a volcanic eruption in 79 AD. Offers insights into daily life in ancient Rome.</p>
+                </div>
+
+                <button class="collapsible px-3 py-2 bg-blue-600 text-white rounded">Giza, Egypt</button>
+                <div class="content px-3 py-2 bg-stone-100 rounded hidden flex flex-col items-center">
+                    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD..." alt="Giza" class="w-full md:w-1/2 rounded mb-2"/>
+                    <p>Home of the Great Pyramids and ancient tombs. Learn about pharaohs and Egyptian culture.</p>
+                </div>
+
+                <button class="collapsible px-3 py-2 bg-blue-600 text-white rounded">Stonehenge, England</button>
+                <div class="content px-3 py-2 bg-stone-100 rounded hidden flex flex-col items-center">
+                    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAZABkAAD..." alt="Stonehenge" class="w-full md:w-1/2 rounded mb-2"/>
+                    <p>Prehistoric monument with mysterious origins. Famous for large standing stones arranged in a circle.</p>
+                </div>
+
+                <button class="collapsible px-3 py-2 bg-blue-600 text-white rounded">Terracotta Army, China</button>
+                <div class="content px-3 py-2 bg-stone-100 rounded hidden flex flex-col items-center">
+                    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAXABkAAD..." alt="Terracotta Army" class="w-full md:w-1/2 rounded mb-2"/>
+                    <p>Thousands of life-size statues guarding an emperor's tomb. Discovered in 1974, showing ancient Chinese craftsmanship.</p>
+                </div>
             </div>
-        `;
-    } else if(name==='quiz') {
+
+            <h2 class="text-xl font-semibold mt-4">Tools & Techniques</h2>
+            <ul class="list-disc list-inside text-stone-700 mt-2 space-y-1">
+                <li><span class="tooltip" title="Used for precise digging and scraping layers of soil.">Trowel</span></li>
+                <li><span class="tooltip" title="Used to gently clean fragile artifacts.">Brushes</span></li>
+                <li><span class="tooltip" title="Used to sift soil and find small objects like coins or bones.">Screens</span></li>
+                <li><span class="tooltip" title="Notebooks, cameras, and scanners to document every discovery.">Recording Tools</span></li>
+            </ul>
+
+            <h2 class="text-xl font-semibold mt-4">Working at a Dig Site</h2>
+            <ul class="list-disc list-inside text-stone-700 mt-2 space-y-1">
+                <li>Mapping and measuring excavation areas.</li>
+                <li>Excavating carefully without damaging artifacts.</li>
+                <li>Cataloging and preserving finds.</li>
+                <li>Analyzing discoveries to understand historical context.</li>
+            </ul>
+
+            <h2 class="text-xl font-semibold mt-4">Quick Tips for Beginners</h2>
+            <ul class="list-disc list-inside text-stone-700 mt-2 space-y-1">
+                <li>Wear gloves and protective gear.</li>
+                <li>Take detailed notes and photos.</li>
+                <li>Respect the site and follow safety rules.</li>
+                <li>Ask questions and learn from experienced archaeologists.</li>
+            </ul>
+
+            <div class="quiz mt-6 p-4 bg-stone-100 rounded">
+                <h2 class="text-lg font-semibold">Mini Quiz 1</h2>
+                <p class="mt-2">Which tool is used to gently clean artifacts?</p>
+                <button onclick="alert('Correct! Brushes are used to clean artifacts.');" class="mt-2 px-3 py-1 bg-blue-600 text-white rounded">Brushes</button>
+                <button onclick="alert('Incorrect. Try again!');" class="mt-2 ml-2 px-3 py-1 bg-gray-400 text-white rounded">Trowel</button>
+                <button onclick="alert('Incorrect. Try again!');" class="mt-2 ml-2 px-3 py-1 bg-gray-400 text-white rounded">Screen</button>
+            </div>
+
+            <div class="quiz mt-6 p-4 bg-stone-100 rounded">
+                <h2 class="text-lg font-semibold">Mini Quiz 2</h2>
+                <p class="mt-2">Which famous site was buried by a volcanic eruption?</p>
+                <button onclick="alert('Correct! Pompeii was buried by Vesuvius.');" class="mt-2 px-3 py-1 bg-blue-600 text-white rounded">Pompeii</button>
+                <button onclick="alert('Incorrect. Try again!');" class="mt-2 ml-2 px-3 py-1 bg-gray-400 text-white rounded">Giza</button>
+                <button onclick="alert('Incorrect. Try again!');" class="mt-2 ml-2 px-3 py-1 bg-gray-400 text-white rounded">Stonehenge</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Collapsible dig site sections
+        const collapsibles = contentArea.querySelectorAll('.collapsible');
+        collapsibles.forEach(button => {
+            button.addEventListener('click', () => {
+                const content = button.nextElementSibling;
+                content.classList.toggle('hidden');
+            });
+        });
+
+        // Tooltip animation
+        const tooltipElems = contentArea.querySelectorAll('.tooltip');
+        tooltipElems.forEach(el => {
+            el.style.position = 'relative';
+            el.addEventListener('mouseenter', () => {
+                const tip = document.createElement('span');
+                tip.className = 'tooltip-text';
+                tip.innerText = el.getAttribute('title');
+                tip.style.position = 'absolute';
+                tip.style.bottom = '125%';
+                tip.style.left = '50%';
+                tip.style.transform = 'translateX(-50%)';
+                tip.style.backgroundColor = '#333';
+                tip.style.color = '#fff';
+                tip.style.padding = '5px 8px';
+                tip.style.borderRadius = '4px';
+                tip.style.whiteSpace = 'nowrap';
+                tip.style.zIndex = '10';
+                tip.style.opacity = '0';
+                tip.style.transition = 'opacity 0.3s';
+                el.appendChild(tip);
+                requestAnimationFrame(() => { tip.style.opacity = '1'; });
+                el._tooltip = tip;
+            });
+            el.addEventListener('mouseleave', () => {
+                if(el._tooltip) el._tooltip.remove();
+            });
+        });
+    `;
+}
+    else if(name==='quiz') {
         contentArea.innerHTML = `
             <div class="max-w-4xl mx-auto p-6 md:p-8">
                 <h1 class="text-2xl md:text-3xl font-bold">Excavation Academy Quizzes</h1>
@@ -2083,3 +2565,5 @@ window.saveArtifactLog = saveArtifactLog;
 </script>
 </body>
 </html>
+
+
